@@ -138,7 +138,7 @@ function addEmployee() {
     ]
   }
 ]).then(function(response){
-  newEmployee.firstNmae = response.firstNmae;
+  newEmployee.firstNmae = response.firstName;
   newEmployee.lastName = response.lastName;
   newEmployee.role = response.role;
   switch (response.role) {
@@ -173,12 +173,13 @@ function addEmployee() {
       })
     }).then(function(response){
       newEmployee.managerName = response.pickedManager
-      // newEmployee.managerID = managerArray.filter(function(id) {
-      //   console.log(id.response.pickedManager);
-      //   return id.response.pickedManager
-      // });
+      let manager = managerArray.filter(function(id) {
+        return id.name = response.pickedManager
+      });
+      console.log(manager);
+      newEmployee.managerID = manager[0].id
       console.log(newEmployee);
-      start();
+      addEmployeeToDB();
     });
     
   });
@@ -209,6 +210,22 @@ function queryRole(role) {
 
 function queryManager(manager) {
   connection.query("SELECT * FROM employees WHERE manager_name = ? ORDER BY id ASC", [manager], function(err, res) {
+    if (err) throw err;
+    console.table(res);
+    start();
+  });
+}
+
+function addEmployeeToDB() {
+  connection.query("INSERT INTO employees (first_name, last_name, role, role_id, manager_name, manager_id) VALUES (?,?,?,?,?,?)", 
+  [
+    newEmployee.firstName,
+    newEmployee.lastName,
+    newEmployee.role,
+    newEmployee.roleID,
+    newEmployee.managerName,
+    newEmployee.managerID
+  ], function(err, res) {
     if (err) throw err;
     console.table(res);
     start();
