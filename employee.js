@@ -236,11 +236,11 @@ connection.query("SELECT * FROM employees ORDER BY id ASC", function(err, res) {
     inquirer
     .prompt([
       {
-        name: "pickedManager",
+        name: "pickedEmployee",
         type: "list",
-        message: "Which Manager?",
-        choices: managerArray.map(function(obj){
-          return obj.name
+        message: "Which employee?",
+        choices: employeeArray.map(function(obj){
+          return obj.name + " " + "id:" + " " + obj.id
         })
       },
     {
@@ -272,7 +272,7 @@ connection.query("SELECT * FROM employees ORDER BY id ASC", function(err, res) {
       console.log(employee);
       employeeID = employee.split(":")[1];
       console.log(employeeID);
-      connection.query("UPDATE employees role = ?, role_id = ? WHERE id = ?", [role, roleID, employeeID],function(err, res) {
+      connection.query("UPDATE employees SET role = ?, role_id = ? WHERE id = ?", [role, roleID, employeeID],function(err, res) {
         if (err) throw err;
         console.table(res);
         start();
