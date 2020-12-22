@@ -281,7 +281,36 @@ connection.query("SELECT * FROM employees ORDER BY id ASC", function(err, res) {
   });
 }
 function updateEmployeeManager() {
-    
+  connection.query("SELECT * FROM employees WHERE manager_id IS NOT NULL ORDER BY id ASC", function(err, res) {
+    if (err) throw err;
+    console.table(res);
+    for (var i = 0; i < res.length; i++) {
+      employeeArray.push({name: res[i].first_name + " " + res[i].last_name, id: res[i].id})
+    }
+    console.log(employeeArray);
+    inquirer
+    .prompt(
+      {
+        name: "pickedEmployee",
+        type: "list",
+        message: "Which employee?",
+        choices: employeeArray.map(function(obj){
+          return obj.name + " " + "id:" + " " + obj.id
+        })
+      }
+  ).then(function(response){
+      let employee = response.pickedEmployee  
+      employee = employee.replace(/\s/g, "");
+      console.log(employee);
+      employeeID = employee.split(":")[1];
+      console.log(employeeID);
+      connection.query("SELECT * FROM employees WHERE id = ?", [employeeID],function(err, res) {
+        if (err) throw err;
+        console.table(res[0].role);
+        handleManagerUpdate(res[0].role, employeeID)
+      });
+    });
+  });
 }
 
 //queries
@@ -315,5 +344,43 @@ function addEmployeeToDB() {
     if (err) throw err;
     console.table(res);
     start();
+  });
+}
+
+function handleManagerUpdate(role, employeeID) {
+  console.log(role)
+  connection.query("SELECT * FROM employees WHERE manager_id IS NULL AND role = ? ORDER BY id ASC", [role], function(err, res) {
+    if (err) throw err;
+    console.table(res);
+    for (var i = 0; i < res.length; i++) {
+      managerArray.push({name: res[i].first_name + " " + res[i].last_name, id: res[i].id})
+    }
+    inquirer
+    .prompt({
+      name: "pickedManager",
+      type: "list",
+      message: "Which Manager?",
+      choices: managerArray.map(function(obj){
+        return obj.name + " " + "id:" + " " + obj.id
+      })
+    }).then(function(response){
+      let manager = response.pickedManager  
+      let managerNoSpace = manager.replace(/\s/g, "");
+      console.log(managerNoSpace);
+      let managerID = managerNoSpace.split(":")[1];
+      console.log(managerID);
+
+      //name property
+
+      let managerName = manager.split("id")[0].trim()
+      console.log(managerName, managerID, employeeID)
+
+      connection.query("UPDATE employees SET manager_name = ?, manager_id = ? WHERE id = ?", [managerName, managerID, employeeID],function(err, res) {
+        if (err) throw err;
+        console.table(res);
+        start();
+      });
+    });
+    
   });
 }
