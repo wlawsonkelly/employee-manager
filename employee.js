@@ -7,6 +7,11 @@ let managerArray = [{
   id: 0
 }];
 
+let employeeArray = [{
+  name: "",
+  id: 0
+}]
+
 const newEmployee = {
   id: 0,
   firstNmae: "",
@@ -189,7 +194,31 @@ function addEmployee() {
 }
 
 function removeEmployee() {
-
+  connection.query("SELECT * FROM employees ORDER BY id ASC", function(err, res) {
+    if (err) throw err;
+    console.table(res);
+    for (var i = 0; i < res.length; i++) {
+      employeeArray.push({name: res[i].first_name + " " + res[i].last_name, id: res[i].id})
+    }
+    console.log(employeeArray);
+    inquirer
+    .prompt({
+      name: "pickedEmployee",
+      type: "list",
+      message: "Which Employee?",
+      choices: employeeArray.map(function(obj){
+        return obj.name + " " + "id:" + " " + obj.id
+      })
+    }).then(function(response){
+      console.log(response.pickedManager)
+      start();
+      // connection.query("DELETE FROM employees WHERE id = ?", [response.pickedManager.id],function(err, res) {
+      //   if (err) throw err;
+      //   console.table(res);
+      //   start();
+      // });
+    });
+  });
 }
 function updateEmployeeRole() {
 
@@ -217,9 +246,9 @@ function queryManager(manager) {
 }
 
 function addEmployeeToDB() {
+  console.log(newEmployee);
   connection.query("INSERT INTO employees (first_name, last_name, role, role_id, manager_name, manager_id) VALUES (?,?,?,?,?,?)", 
-  [
-    newEmployee.firstName,
+  [ newEmployee.firstNmae,
     newEmployee.lastName,
     newEmployee.role,
     newEmployee.roleID,
