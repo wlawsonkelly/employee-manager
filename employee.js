@@ -210,13 +210,16 @@ function removeEmployee() {
         return obj.name + " " + "id:" + " " + obj.id
       })
     }).then(function(response){
-      console.log(response.pickedManager)
-      start();
-      // connection.query("DELETE FROM employees WHERE id = ?", [response.pickedManager.id],function(err, res) {
-      //   if (err) throw err;
-      //   console.table(res);
-      //   start();
-      // });
+      let employee = response.pickedEmployee
+      employee = employee.replace(/\s/g, "");
+      console.log(employee);
+      employeeID = employee.split(":")[1];
+      console.log(employeeID);
+      connection.query("DELETE FROM employees WHERE id = ?", [employeeID],function(err, res) {
+        if (err) throw err;
+        console.table(res);
+        start();
+      });
     });
   });
 }
