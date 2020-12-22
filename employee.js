@@ -22,6 +22,8 @@ const newEmployee = {
   managerID: 0
 }
 
+let roleID = 0;
+
 var connection = mysql.createConnection({
   host: "localhost",
 
@@ -224,7 +226,59 @@ function removeEmployee() {
   });
 }
 function updateEmployeeRole() {
-
+connection.query("SELECT * FROM employees ORDER BY id ASC", function(err, res) {
+    if (err) throw err;
+    console.table(res);
+    for (var i = 0; i < res.length; i++) {
+      employeeArray.push({name: res[i].first_name + " " + res[i].last_name, id: res[i].id})
+    }
+    console.log(employeeArray);
+    inquirer
+    .prompt([
+      {
+        name: "pickedManager",
+        type: "list",
+        message: "Which Manager?",
+        choices: managerArray.map(function(obj){
+          return obj.name
+        })
+      },
+    {
+      name: "role",
+      type: "list",
+      message: "What is the employees new role?",
+      choices: [
+        "Sales",
+        "Legal",
+        "Finance",
+        "Engineering"
+      ]
+    }
+  ]).then(function(response){
+      let employee = response.pickedEmployee
+      let role = response.role
+      
+      switch (response.role) {
+        case "Sales":
+        roleID = 1
+        case "Legal":
+        roleID = 2
+        case "Finance":
+        roleID = 3
+        case "Engineering":
+        roleID = 4
+      }
+      employee = employee.replace(/\s/g, "");
+      console.log(employee);
+      employeeID = employee.split(":")[1];
+      console.log(employeeID);
+      connection.query("UPDATE employees role = ?, role_id = ? WHERE id = ?", [role, roleID, employeeID],function(err, res) {
+        if (err) throw err;
+        console.table(res);
+        start();
+      });
+    });
+  });
 }
 function updateEmployeeManager() {
     
