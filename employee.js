@@ -16,9 +16,7 @@ const newEmployee = {
   id: 0,
   firstNmae: "",
   lastName: "",
-  role: "",
   roleID: 0,
-  managerName: "",
   managerID: 0
 }
 
@@ -96,28 +94,90 @@ function viewEmplpyeesByDepartment() {
       "Engineering"
     ]
   }).then(function(response){
-    queryRole(response.department);
+    let departmentNumber = 0;
+    console.log(response.department)
+    switch (response.department) {
+      case "Sales":
+        departmentNumber = 1
+        break
+      case "Legal":
+        departmentNumber = 2
+        break
+      case "Finance":
+        departmentNumber = 3
+        break
+      case "Engineering":
+        departmentNumber = 4
+        break
+    }
+    console.log(departmentNumber)
+    queryDepartment(departmentNumber);
   });
 }
+
+let queryNumber1 = 0;
+let queryNumber2 = 0;
+
+function queryDepartment(departmentNumber) {
+  console.log(departmentNumber)
+  switch (departmentNumber) {
+    case 1:
+      queryNumber1 = 1
+      queryNumber2 = 2
+      break
+    case 2:
+    queryNumber1 = 3
+    queryNumber2 = 4
+      break
+    case 3:
+    queryNumber1 = 5
+    queryNumber2 = 6
+      break
+    case 4:
+    queryNumber1 = 7
+    queryNumber2 = 8
+      break
+  }
+
+  connection.query("SELECT * FROM employees WHERE role_id = ? OR role_id = ? ORDER BY id ASC", [queryNumber1, queryNumber2], function(err, res) {
+    if (err) throw err;
+    console.table(res);
+    start();
+  });
+}
+
 function viewEmplpyeesByManager() {
-  connection.query("SELECT * FROM employees WHERE manager_id IS NOT NULL ORDER BY id ASC", function(err, res) {
+  connection.query("SELECT * FROM employees WHERE manager_id IS NULL ORDER BY id ASC", function(err, res) {
+    let nameArray = []
     if (err) throw err; 
     for (var i = 0; i < res.length; i++) {
-      managerArray.push({name: res[i].manager_name, id: res[i].manager_id})
+      nameArray.push(res[i].first_name + " " + res[i].last_name)
+      managerArray.push({name: res[i].first_name + " " + res[i].last_name, id: res[i].id})
     }
+
   inquirer
   .prompt({
     name: "manager",
     type: "list",
     message: "Which Manager?",
-    choices:  managerArray.map(function(obj){
-      return obj.name
-    })
+    choices:  nameArray
   }).then(function(response){
     queryManager(response.manager);
   });
 });
-
+function queryManager(manager) {
+  console.log(managerArray);
+  console.log(manager);
+  let filteredManager =  managerArray.filter(function(man) {
+    return man.name === manager
+  });
+  console.log(filteredManager);
+  connection.query("SELECT * FROM employees WHERE manager_id = ? ORDER BY id ASC", [filteredManager[0].id], function(err, res) {
+    if (err) throw err;
+    console.table(res);
+    start();
+  });
+}
 }
 function addEmployee() {
   managerArray = [];
@@ -138,61 +198,56 @@ function addEmployee() {
     type: "list",
     message: "What is the employees role?",
     choices: [
-      "Sales",
-      "Legal",
-      "Finance",
-      "Engineering"
+      "Sales Person",
+      "Lawyer",
+      "Accountant",
+      "Dev"
     ]
   }
 ]).then(function(response){
   newEmployee.firstNmae = response.firstName;
   newEmployee.lastName = response.lastName;
-  newEmployee.role = response.role;
   switch (response.role) {
-    case "Sales":
-      newEmployee.roleID = 1
-    case "Legal":
+    case "Sales Person":
       newEmployee.roleID = 2
-    case "Finance":
-      newEmployee.roleID = 3
-    case "Engineering":
+      break
+    case "Lawyer":
       newEmployee.roleID = 4
+      break
+    case "Accountant":
+      newEmployee.roleID = 6
+      break
+    case "Dev":
+      newEmployee.roleID = 8
+      break
   }
   connection.query("SELECT * FROM employees ORDER BY id ASC", function(err, res) {
     if (err) throw err; 
     newEmployee.id = res.length + 1
   });
-  connection.query("SELECT * FROM employees WHERE manager_id IS NOT NULL AND role = ? ORDER BY id ASC",[response.role], function(err, res) {
+  connection.query("SELECT * FROM employees WHERE manager_id IS NULL AND role_id = ? ORDER BY id ASC",[newEmployee.roleID - 1], function(err, res) {
     if (err) throw err; 
     for (var i = 0; i < res.length; i++) {
-      managerArray.push({name: res[i].manager_name, id: res[i].manager_id})
+      managerArray.push({name: res[i].first_name + " " + res[i].last_name, id: res[i].id})
     }
-    console.log(managerArray.map(function(obj){
-      return obj.name
-    }));
-    inquirer
-    .prompt({
-      name: "pickedManager",
-      type: "list",
-      message: "Which Manager?",
-      choices: managerArray.map(function(obj){
-        return obj.name
-      })
-    }).then(function(response){
-      newEmployee.managerName = response.pickedManager
-      let manager = managerArray.filter(function(id) {
-        return id.name = response.pickedManager
-      });
-      console.log(manager);
-      newEmployee.managerID = manager[0].id
-      console.log(newEmployee);
-      addEmployeeToDB();
-    });
-    
+    newEmployee.managerID = managerArray[0].id
+    addEmployeeToDB();
   });
-
-
 });
+}
+
+function addEmployeeToDB() {
+  console.log(newEmployee);
+  connection.query("INSERT INTO employees (first_name, last_name, role_id, manager_id) VALUES (?,?,?,?)", 
+  [ newEmployee.firstNmae,
+    newEmployee.lastName,
+    newEmployee.roleID,
+    newEmployee.managerID
+  ], function(err, res) {
+    if (err) throw err;
+    console.table(res);
+    start();
+  });
 }
 
 function removeEmployee() {
@@ -248,31 +303,50 @@ connection.query("SELECT * FROM employees ORDER BY id ASC", function(err, res) {
       type: "list",
       message: "What is the employees new role?",
       choices: [
-        "Sales",
-        "Legal",
-        "Finance",
-        "Engineering"
+        "Sales Lead",
+        "Sales Person",
+        "Legal Head",
+        "Lawyer",
+        "CFO",
+        "Accountant",
+        "Lead Dev",
+        "Dev"
       ]
     }
   ]).then(function(response){
       let employee = response.pickedEmployee
-      let role = response.role
       
       switch (response.role) {
-        case "Sales":
+        case "Sales Lead":
         roleID = 1
-        case "Legal":
+        break
+        case "Sales Person":
         roleID = 2
-        case "Finance":
+        break
+        case "Legal Head":
         roleID = 3
-        case "Engineering":
+        break
+        case "Lawyer":
         roleID = 4
+        break
+        case "CFO":
+        roleID = 5
+        break
+        case "Accountant":
+        roleID = 6
+        break
+        case "Lead Dev":
+        roleID = 7
+        break
+        case "Dev":
+        roleID = 8
+        break
       }
       employee = employee.replace(/\s/g, "");
       console.log(employee);
       employeeID = employee.split(":")[1];
       console.log(employeeID);
-      connection.query("UPDATE employees SET role = ?, role_id = ? WHERE id = ?", [role, roleID, employeeID],function(err, res) {
+      connection.query("UPDATE employees SET role_id = ? WHERE id = ?", [roleID, employeeID],function(err, res) {
         if (err) throw err;
         console.table(res);
         start();
@@ -307,49 +381,16 @@ function updateEmployeeManager() {
       connection.query("SELECT * FROM employees WHERE id = ?", [employeeID],function(err, res) {
         if (err) throw err;
         console.table(res[0].role);
-        handleManagerUpdate(res[0].role, employeeID)
+        handleManagerUpdate(res[0].role_id, employeeID)
       });
     });
   });
 }
 
-//queries
 
-function queryRole(role) {
-  connection.query("SELECT * FROM employees WHERE role = ? ORDER BY id ASC", [role], function(err, res) {
-    if (err) throw err;
-    console.table(res);
-    start();
-  });
-}
 
-function queryManager(manager) {
-  connection.query("SELECT * FROM employees WHERE manager_name = ? ORDER BY id ASC", [manager], function(err, res) {
-    if (err) throw err;
-    console.table(res);
-    start();
-  });
-}
-
-function addEmployeeToDB() {
-  console.log(newEmployee);
-  connection.query("INSERT INTO employees (first_name, last_name, role, role_id, manager_name, manager_id) VALUES (?,?,?,?,?,?)", 
-  [ newEmployee.firstNmae,
-    newEmployee.lastName,
-    newEmployee.role,
-    newEmployee.roleID,
-    newEmployee.managerName,
-    newEmployee.managerID
-  ], function(err, res) {
-    if (err) throw err;
-    console.table(res);
-    start();
-  });
-}
-
-function handleManagerUpdate(role, employeeID) {
-  console.log(role)
-  connection.query("SELECT * FROM employees WHERE manager_id IS NULL AND role = ? ORDER BY id ASC", [role], function(err, res) {
+function handleManagerUpdate(roleID, employeeID) {
+  connection.query("SELECT * FROM employees WHERE manager_id IS NULL AND role_id = ? ORDER BY id ASC", [roleID - 1], function(err, res) {
     if (err) throw err;
     console.table(res);
     for (var i = 0; i < res.length; i++) {
@@ -372,10 +413,7 @@ function handleManagerUpdate(role, employeeID) {
 
       //name property
 
-      let managerName = manager.split("id")[0].trim()
-      console.log(managerName, managerID, employeeID)
-
-      connection.query("UPDATE employees SET manager_name = ?, manager_id = ? WHERE id = ?", [managerName, managerID, employeeID],function(err, res) {
+      connection.query("UPDATE employees SET manager_id = ? WHERE id = ?", [managerID, employeeID],function(err, res) {
         if (err) throw err;
         console.table(res);
         start();
