@@ -75,7 +75,7 @@ function start() {
 }
 
 function viewEmplpyees() {
-  connection.query("SELECT * FROM employees ORDER BY id ASC", function(err, res) {
+  connection.query("SELECT * FROM employees LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments as c on roles.department_id = c.id", function(err, res) {
     if (err) throw err;
     console.table(res);
     start();
@@ -139,7 +139,7 @@ function queryDepartment(departmentNumber) {
       break
   }
 
-  connection.query("SELECT * FROM employees WHERE role_id = ? OR role_id = ? ORDER BY id ASC", [queryNumber1, queryNumber2], function(err, res) {
+  connection.query("SELECT * FROM employees LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments as c ON roles.department_id = c.id WHERE role_id = ? OR role_id = ? ", [queryNumber1, queryNumber2], function(err, res) {
     if (err) throw err;
     console.table(res);
     start();
@@ -172,7 +172,7 @@ function queryManager(manager) {
     return man.name === manager
   });
   console.log(filteredManager);
-  connection.query("SELECT * FROM employees WHERE manager_id = ? ORDER BY id ASC", [filteredManager[0].id], function(err, res) {
+  connection.query("SELECT * FROM employees LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments as c ON roles.department_id = c.id WHERE manager_id = ?", [filteredManager[0].id], function(err, res) {
     if (err) throw err;
     console.table(res);
     start();
@@ -225,7 +225,7 @@ function addEmployee() {
     if (err) throw err; 
     newEmployee.id = res.length + 1
   });
-  connection.query("SELECT * FROM employees WHERE manager_id IS NULL AND role_id = ? ORDER BY id ASC",[newEmployee.roleID - 1], function(err, res) {
+  connection.query("SELECT * FROM employees LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments as c ON roles.department_id = c.id WHERE manager_id IS NULL AND role_id = ?",[newEmployee.roleID - 1], function(err, res) {
     if (err) throw err; 
     for (var i = 0; i < res.length; i++) {
       managerArray.push({name: res[i].first_name + " " + res[i].last_name, id: res[i].id})
@@ -355,7 +355,7 @@ connection.query("SELECT * FROM employees ORDER BY id ASC", function(err, res) {
   });
 }
 function updateEmployeeManager() {
-  connection.query("SELECT * FROM employees WHERE manager_id IS NOT NULL ORDER BY id ASC", function(err, res) {
+  connection.query("SELECT * FROM employees LEFT JOIN roles ON employees.role_id = roles.id LEFT JOIN departments as c ON roles.department_id = c.id WHERE manager_id IS NOT NULL", function(err, res) {
     if (err) throw err;
     console.table(res);
     for (var i = 0; i < res.length; i++) {
